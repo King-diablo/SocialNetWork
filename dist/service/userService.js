@@ -9,24 +9,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createMedai = exports.DeletePost = exports.GetAllPost = exports.createPost = void 0;
+exports.createMedia = exports.DeletePost = exports.GetPostById = exports.GetAllPost = exports.createPostContent = void 0;
 const database_1 = require("../config/database");
 const errorHelper_1 = require("../util/errorHelper");
-const createPost = () => __awaiter(void 0, void 0, void 0, function* () {
+const createPostContent = (postData) => __awaiter(void 0, void 0, void 0, function* () {
     const { data, status, statusText, error } = yield database_1.supabase
         .from('Post')
-        .insert({ user_id: "9cac90f7-29ae-4392-be6c-4eaab8ce012e", userName: 'kingDiablo', content: "testPost 007" });
+        .insert({
+        user_id: postData.userId,
+        userName: postData.userName,
+        content: postData.content,
+        isMedia: postData.isMedia,
+        mediaPath: postData.mediaPath
+    });
     if (error) {
         const err = (0, errorHelper_1.getErrorMessage)(error);
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         };
     }
     return { message: "post created successfuly", status, postStatus: statusText };
 });
-exports.createPost = createPost;
+exports.createPostContent = createPostContent;
 const GetAllPost = () => __awaiter(void 0, void 0, void 0, function* () {
     const { data, error } = yield database_1.supabase
         .from('Post')
@@ -36,29 +42,46 @@ const GetAllPost = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         };
     }
     return data;
 });
 exports.GetAllPost = GetAllPost;
-const DeletePost = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { data, status, statusText, error } = yield database_1.supabase
+const GetPostById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const { data, error } = yield database_1.supabase
         .from('Post')
-        .delete()
-        .eq('id', 23);
+        .select()
+        .eq("id", id);
     if (error) {
         const err = (0, errorHelper_1.getErrorMessage)(error);
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         };
     }
+    return data;
+});
+exports.GetPostById = GetPostById;
+const DeletePost = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const { data, status, statusText, error } = yield database_1.supabase
+        .from('Post')
+        .delete()
+        .eq('id', id);
+    if (error) {
+        const err = (0, errorHelper_1.getErrorMessage)(error);
+        console.log(err.stack);
+        return {
+            message: err.message,
+            from: err.from,
+        };
+    }
+    console.log(data, status, statusText, error);
     return { data, status, statusText };
 });
 exports.DeletePost = DeletePost;
-const createMedai = (file, name, fileType) => __awaiter(void 0, void 0, void 0, function* () {
+const createMedia = (file, name, fileType) => __awaiter(void 0, void 0, void 0, function* () {
     const { data, error } = yield database_1.supabase
         .storage
         .from('Post')
@@ -72,9 +95,9 @@ const createMedai = (file, name, fileType) => __awaiter(void 0, void 0, void 0, 
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         };
     }
     return { message: "uploaded succesfuly", data };
 });
-exports.createMedai = createMedai;
+exports.createMedia = createMedia;

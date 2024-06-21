@@ -5,17 +5,25 @@ import { EVN } from "./util/env";
 import auth from "./router/v1/authRouter";
 import { urlencoded } from "body-parser";
 import multer from "multer";
+import user from "./router/v1/userRouter";
 
 
 const app = express();
 
-const media = multer({ });
+
+const media = multer({dest: "./uploads"});
+
+
 
 app.use(helmet())
 app.use(morgan("dev"));
 app.use(urlencoded({extended: true}));
 
-app.use("/api/v1/auth", auth);
+const baseRoute = "/api/v1";
+
+
+app.use(`${baseRoute}/auth`, auth);
+app.use(`${baseRoute}/user`, user);
 
 const PORT = EVN.PORT || 5000;
 

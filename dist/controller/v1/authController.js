@@ -11,15 +11,40 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.signUp = void 0;
 const authService_1 = require("../../service/authService");
+const token_1 = require("../../util/token");
 const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password } = req.body;
-    const response = yield (0, authService_1.createUser)(email, password);
-    res.status(200).json({ message: "success", response });
+    const userData = req.body;
+    try {
+        const response = yield (0, authService_1.createUser)(userData);
+        if ("id" in response) {
+            const token = yield (0, token_1.Encrypt)(response);
+            return res.status(200).json({ status: "success", message: "created account successfuly", response, token });
+        }
+        else {
+            return res.status(400).json({ status: "error", response });
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "an error has occured" });
+    }
 });
 exports.signUp = signUp;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, password } = req.body;
-    const response = yield (0, authService_1.LoginUser)(email, password);
-    res.status(200).json({ message: "success", response });
+    const userData = req.body;
+    try {
+        const response = yield (0, authService_1.LoginUser)(userData);
+        if ("email" in response) {
+            const token = yield (0, token_1.Encrypt)(response);
+            return res.status(200).json({ status: "success", message: "logged in succesfuly", response, token });
+        }
+        else {
+            return res.status(400).json({ status: "error", response });
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "an error has occured" });
+    }
 });
 exports.login = login;

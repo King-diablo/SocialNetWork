@@ -1,14 +1,19 @@
 import express from "express";
-import { createPost, deleteAccount, deletePost, starPost, updateProfile } from "../../controller/v1/userController";
+import { createPost, deleteAccount, deletePost, getAllPosts, getPostById, updateProfile } from "../../controller/v1/userController";
+import { DecryptToken } from "../../middleware/tokenHandler";
 
 const router = express.Router();
 
+router.get("/post", getAllPosts);
 
-router.post("/update", updateProfile)
-.post("/createPost", createPost)
-.post("/startPost/:id", starPost);
+router.get("/post/:id", DecryptToken, getPostById);
 
-router.delete("/delete", deleteAccount)
-.delete("/post/:id", deletePost);
+router.post("/update", DecryptToken, updateProfile);
 
-export default router;
+router.post("/post", DecryptToken, createPost);
+
+router.delete("/post/:id", DecryptToken, deletePost);
+
+router.delete("/account/:id", DecryptToken, deleteAccount);
+
+export default router

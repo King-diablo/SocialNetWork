@@ -3,9 +3,11 @@ import { AuthError } from "@supabase/supabase-js";
 export const getErrorMessage = (error: any) => {
     let message = "unknow error has occured";
     let stack = "unknow error stack"
-    let errorName = "unknow-server";
+    let from = "unknow-server";
 
-    if (!error) return { message, stack, errorName }
+    let newError: App_Error = { message, stack, from };
+
+    if (!error) return newError;
 
     if (typeof error === "string")
         message = error;
@@ -13,20 +15,22 @@ export const getErrorMessage = (error: any) => {
     if (error instanceof Error) {
         message = error.message;
         stack = error.stack as string;
-        errorName = error.name
+        from = error.name
     }
 
     if (typeof error === "object") {
         message = error.message;
         stack = error?.stack as string;
-        errorName = error?.name
+        from = error?.name
     }
 
     if (error instanceof AuthError) {
         message = error.code ?? error.message;
         stack = error.stack as string;
-        errorName = error.name
+        from = error.name
     }
 
-    return {message, stack, errorName};
+    newError = { message, stack, from };
+
+    return newError;
 }

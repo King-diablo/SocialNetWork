@@ -1,19 +1,31 @@
 import { supabase } from "../config/database"
 import { getErrorMessage } from "../util/errorHelper";
 
+interface createPostPayload {
+    userId: string,
+    userName: string,
+    content: string,
+    isMedia: boolean,
+    mediaPath?: string,
+}
 
-export const createPost = async () => {
+export const createPostContent = async (postData: createPostPayload) => {
     const { data, status, statusText, error } = await supabase
         .from('Post')
-        .insert({ user_id: "9cac90f7-29ae-4392-be6c-4eaab8ce012e", userName: 'kingDiablo', content: "testPost 007" })
+        .insert({
+            user_id: postData.userId,
+            userName: postData.userName,
+            content: postData.content,
+            isMedia: postData.isMedia,
+            mediaPath: postData.mediaPath
+        })
 
     if (error) {
-
         const err = getErrorMessage(error);
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         }
     }
 
@@ -32,20 +44,19 @@ export const GetAllPost = async () => {
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         }
     }
 
     return data;
 }
 
+export const GetPostById = async (id: number) => {
 
-export const DeletePost = async () => {
-
-    const { data, status, statusText, error } = await supabase
+    const { data, error } = await supabase
         .from('Post')
-        .delete()
-        .eq('id', 23)
+        .select()
+        .eq("id", id);
 
     if (error) {
 
@@ -53,14 +64,36 @@ export const DeletePost = async () => {
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         }
     }
+
+    return data;
+}
+
+export const DeletePost = async (id: number) => {
+
+    const { data, status, statusText, error } = await supabase
+        .from('Post')
+        .delete()
+        .eq('id', id)
+
+    if (error) {
+        const err = getErrorMessage(error);
+        console.log(err.stack);
+        return {
+            message: err.message,
+            from: err.from,
+        }
+    }
+
+    console.log(data, status, statusText, error);
+
 
     return { data, status, statusText };
 }
 
-export const createMedai = async (file: ArrayBuffer, name: string, fileType: string) => {
+export const createMedia = async (file: ArrayBuffer, name: string, fileType: string) => {
     const { data, error } = await supabase
         .storage
         .from('Post')
@@ -75,7 +108,7 @@ export const createMedai = async (file: ArrayBuffer, name: string, fileType: str
         console.log(err.stack);
         return {
             message: err.message,
-            from: err.errorName,
+            from: err.from,
         }
     }
 
