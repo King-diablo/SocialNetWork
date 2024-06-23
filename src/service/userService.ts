@@ -9,7 +9,7 @@ interface createPostPayload {
     mediaPath?: string,
 }
 
-export const createPostContent = async (postData: createPostPayload) => {
+export const CreatePost = async (postData: createPostPayload) => {    
     const { data, status, statusText, error } = await supabase
         .from('Post')
         .insert({
@@ -93,11 +93,32 @@ export const DeletePost = async (id: number) => {
     return { data, status, statusText };
 }
 
-export const createMedia = async (file: ArrayBuffer, name: string, fileType: string) => {
+export const CreateMedia_Image = async (file: ArrayBuffer, name: string, fileType: string) => {
     const { data, error } = await supabase
         .storage
         .from('Post')
         .upload(`img/${name}`, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: fileType
+        })
+
+    if (error) {
+        const err = getErrorMessage(error);
+        return {
+            message: err.message,
+            from: err.from,
+        }
+    }
+
+    return { message: "uploaded succesfuly", data }
+}
+
+export const CreateMedia_Video = async (file: ArrayBuffer, name: string, fileType: string) => {
+    const { data, error } = await supabase
+        .storage
+        .from('Post')
+        .upload(`vid/${name}`, file, {
             cacheControl: '3600',
             upsert: false,
             contentType: fileType
@@ -113,4 +134,25 @@ export const createMedia = async (file: ArrayBuffer, name: string, fileType: str
     }
 
     return { message: "uploaded succesfuly", data }
+}
+
+export const DeleteAccount = async (id: number) => {
+    const { data, status, statusText, error } = await supabase
+        .from('Users')
+        .delete()
+        .eq('id', id)
+
+    if (error) {
+        const err = getErrorMessage(error);
+        console.log(err.stack);
+        return {
+            message: err.message,
+            from: err.from,
+        }
+    }
+
+    console.log(data, status, statusText, error);
+
+
+    return { data, status, statusText };
 }

@@ -16,7 +16,7 @@ exports.Decrypt = exports.Encrypt = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const env_1 = require("./env");
 const Encrypt = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = jsonwebtoken_1.default.sign(payload, env_1.EVN.SECRET);
+    const token = jsonwebtoken_1.default.sign(payload, env_1.EVN.SECRET, { expiresIn: "2h" });
     return token;
 });
 exports.Encrypt = Encrypt;

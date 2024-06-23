@@ -4,7 +4,7 @@ import { EVN } from "./env";
 
 export const Encrypt = async (payload: signedInUser) => {
 
-    const token = jwt.sign(payload, EVN.SECRET as string);
+    const token = jwt.sign(payload, EVN.SECRET as string, {expiresIn: "2h"});
     return token;
 }
 

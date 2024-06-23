@@ -3,7 +3,7 @@ type createUserPayload = {
     password: string,
     userName: string,
     phoneNumber: string,
-    matric_Number: string,
+    matricNumber: string,
     level: string,
     department: string,
     faculaty: string,
@@ -18,9 +18,10 @@ type signedInUser = {
     id: string,
     email: string,
     userName: string,
-    matric_Number: string,
+    matricNumber: string,
     phoneNumber: string,
     level: string,
     department: string,
     faculaty: string,
+    role
 }

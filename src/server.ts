@@ -4,16 +4,10 @@ import morgan from "morgan";
 import { EVN } from "./util/env";
 import auth from "./router/v1/authRouter";
 import { urlencoded } from "body-parser";
-import multer from "multer";
 import user from "./router/v1/userRouter";
 
 
 const app = express();
-
-
-const media = multer({dest: "./uploads"});
-
-
 
 app.use(helmet())
 app.use(morgan("dev"));

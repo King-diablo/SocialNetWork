@@ -12,35 +12,43 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoginUser = exports.createUser = void 0;
 const database_1 = require("../config/database");
 const errorHelper_1 = require("../util/errorHelper");
+const passwordGenerator_1 = require("../util/passwordGenerator");
 const createUser = (userData) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const { email, password, matric_Number, userName, phoneNumber, department, faculaty, level } = userData;
-    const { data, error } = yield database_1.supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: {
-                matric_Number,
-                displayName: userName,
-                phoneNumber,
-                department,
-                faculaty,
-                level
-            }
-        }
-    });
-    const signUpError = getError(error);
+    const { email, password, matricNumber, userName, phoneNumber, department, faculaty, level } = userData;
+    const response = yield (0, exports.LoginUser)({ email, password });
+    let customError = null;
+    if ("email" in response) {
+        customError = getError("user already exist");
+    }
+    const hashedPassword = yield (0, passwordGenerator_1.encryptPassword)(password);
+    let creatingUserData = null;
+    let creatingUserError = null;
+    if (!customError) {
+        const { data, error } = yield database_1.supabase
+            .from("Users")
+            .insert({ email, password: hashedPassword, userName, phoneNumber, department, faculaty, level, matricNumber })
+            .select()
+            .limit(1)
+            .single();
+        creatingUserData = data;
+        creatingUserError = error;
+    }
+    const signUpError = (_a = getError(creatingUserError)) !== null && _a !== void 0 ? _a : customError;
     if (signUpError)
         return signUpError;
+    const id = creatingUserData.id;
+    const role = creatingUserData.role;
     const User = {
-        id: (_a = data === null || data === void 0 ? void 0 : data.user) === null || _a === void 0 ? void 0 : _a.id,
+        id: id,
         email,
         userName,
         phoneNumber,
         department,
         faculaty,
         level,
-        matric_Number
+        matricNumber,
+        role,
     };
     return User;
 });
@@ -48,22 +56,28 @@ exports.createUser = createUser;
 const LoginUser = (userData) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
     const { email, password } = userData;
-    const { data, error } = yield database_1.supabase.auth.signInWithPassword({
-        email,
-        password
-    });
-    const logInError = getError(error);
+    const { data, error } = yield database_1.supabase
+        .from("Users")
+        .select()
+        .eq("email", email)
+        .limit(1)
+        .single();
+    let isUser = null;
+    if (data)
+        isUser = yield (0, passwordGenerator_1.decryptPassword)(data.password, password);
+    const logInError = (_b = getError(error)) !== null && _b !== void 0 ? _b : getError(isUser ? null : "password is incorrect");
     if (logInError)
         return logInError;
     const User = {
-        id: (_b = data === null || data === void 0 ? void 0 : data.user) === null || _b === void 0 ? void 0 : _b.id,
+        id: data.id,
         email,
-        userName: getMetadata(data.user, "displayName"),
-        phoneNumber: getMetadata(data.user, "phoneNumber"),
-        department: getMetadata(data.user, "department"),
-        faculaty: getMetadata(data.user, "faculaty"),
-        level: getMetadata(data.user, "level"),
-        matric_Number: getMetadata(data.user, "matric_Number"),
+        userName: data.userName,
+        phoneNumber: data.phoneNumber,
+        department: data.department,
+        faculaty: data.faculaty,
+        level: data.level,
+        matricNumber: data.matricNumber,
+        role: data.role
     };
     return User;
 });
@@ -79,7 +93,4 @@ const getError = (error) => {
     if (error)
         return appError;
     return null;
-};
-const getMetadata = (obj, key) => {
-    return obj.user_metadata[key];
 };
