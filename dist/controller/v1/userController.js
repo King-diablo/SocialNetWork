@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadMedia = exports.deleteAccount = exports.deletePost = exports.createPost = exports.updateProfile = exports.getPostById = exports.getAllPosts = void 0;
+exports.deleteAccount = exports.deletePost = exports.createPost = exports.updateProfile = exports.getPostById = exports.getAllPosts = void 0;
 const userService_1 = require("../../service/userService");
 const errorHelper_1 = require("../../util/errorHelper");
 const promises_1 = __importDefault(require("fs/promises"));
@@ -48,19 +48,37 @@ const updateProfile = (req, res) => {
 };
 exports.updateProfile = updateProfile;
 const createPost = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
-    const { content, isMedia } = req.body;
+    const { content } = req.body;
     if ("user" in req) {
         const user = req.user;
-        let response = null;
-        if (isMedia) {
-            if (!content)
-                return res.status(404).json({ status: "error", messgae: "content is required" });
-            response = yield (0, userService_1.CreatePost)({ content, userId: user.id, isMedia, userName: user.userName });
-            res.status(201).json(response);
+        const userId = user.id;
+        const userName = user.userName;
+        try {
+            let response = null;
+            let isMedia = Boolean(req.file);
+            console.log(isMedia);
+            if (isMedia) {
+                const medaiContent = yield doMediaUpload(req.file, user);
+                const link = medaiContent.mediaLink;
+                if (typeof (link) === "string") {
+                    console.log("hasMedia", content, userId, isMedia, userName, link);
+                    response = yield (0, userService_1.CreatePost)({ content, userId, isMedia, userName, mediaPath: link });
+                    res.status(201).json(response);
+                }
+            }
+            else {
+                if (!content)
+                    return res.status(404).json({ status: "error", messgae: "content is required" });
+                console.log("noMedia", content, userId, isMedia, userName);
+                response = yield (0, userService_1.CreatePost)({ content, userId, isMedia, userName });
+                res.status(201).json(response);
+            }
         }
-        else { }
-        // create media post
+        catch (err) {
+            const error = (0, errorHelper_1.getErrorMessage)(err);
+            console.log(error);
+            res.status(500).json({ message: error.message, reason: error.from });
+        }
     }
 });
 exports.createPost = createPost;
@@ -80,34 +98,35 @@ exports.deletePost = deletePost;
 const deleteAccount = (req, res) => {
 };
 exports.deleteAccount = deleteAccount;
-const uploadMedia = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
-    const user = req.user;
+const doMediaUpload = (file, user) => __awaiter(void 0, void 0, void 0, function* () {
     const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const videoMimeTypes = ['video/mp4', 'video/x-matroska', 'video/avi', 'video/webm'];
     const isImage = (mimeType) => imageMimeTypes.includes(mimeType);
     const isVideo = (mimeType) => videoMimeTypes.includes(mimeType);
-    const mimeType = (_a = req.file) === null || _a === void 0 ? void 0 : _a.mimetype;
-    const path = (_b = req.file) === null || _b === void 0 ? void 0 : _b.path;
+    const mimeType = file === null || file === void 0 ? void 0 : file.mimetype;
+    const path = file === null || file === void 0 ? void 0 : file.path;
     const data = yield promises_1.default.readFile(path);
     let result = null;
     const fileName = `${user === null || user === void 0 ? void 0 : user.userName}_${Date.now()}`;
+    let mediaLink = null;
     if (mimeType) {
         if (isImage(mimeType)) {
-            console.log(`${(_c = req.file) === null || _c === void 0 ? void 0 : _c.filename} is an image with MIME type: ${mimeType}`);
+            console.log(`${file === null || file === void 0 ? void 0 : file.filename} is an image with MIME type: ${mimeType}`);
             result = yield (0, userService_1.CreateMedia_Image)(data.buffer, fileName, mimeType);
         }
         else if (isVideo(mimeType)) {
-            console.log(`${(_d = req.file) === null || _d === void 0 ? void 0 : _d.filename} is a video with MIME type: ${mimeType}`);
+            console.log(`${file === null || file === void 0 ? void 0 : file.filename} is a video with MIME type: ${mimeType}`);
             result = yield (0, userService_1.CreateMedia_Video)(data.buffer, fileName, mimeType);
         }
         else {
-            console.log(`${(_e = req.file) === null || _e === void 0 ? void 0 : _e.filename} is neither an image nor a video.`);
+            console.log(`${file === null || file === void 0 ? void 0 : file.filename} is neither an image nor a video.`);
             result = "Unable to post content";
         }
     }
+    if (result && typeof (result) !== "string" && "data" in result) {
+        mediaLink = yield (0, userService_1.GetMediaLink)(result.data.path);
+    }
     // create a new data in Post database and add the mediaUrl to it
     promises_1.default.rm(path);
-    res.json({ status: "success", result });
+    return { result, mediaLink };
 });
-exports.uploadMedia = uploadMedia;

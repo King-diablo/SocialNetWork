@@ -9,10 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.signUp = void 0;
+exports.validateUser = exports.login = exports.signUp = void 0;
 const authService_1 = require("../../service/authService");
 const token_1 = require("../../util/token");
+const errorHelper_1 = require("../../util/errorHelper");
 const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // recive a token that has the remeaning data for the user
     const userData = req.body;
     try {
         const response = yield (0, authService_1.createUser)(userData);
@@ -48,3 +50,18 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
+const validateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { matricNumber, password } = req.body;
+    try {
+        const payload = {};
+        const response = yield fetch("", payload);
+        res.json(response);
+        //create a token and send it to the user
+    }
+    catch (err) {
+        const error = (0, errorHelper_1.getErrorMessage)(err);
+        console.log(error.stack);
+        res.status(500).json(error);
+    }
+});
+exports.validateUser = validateUser;

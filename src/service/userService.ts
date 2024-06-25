@@ -9,7 +9,7 @@ interface createPostPayload {
     mediaPath?: string,
 }
 
-export const CreatePost = async (postData: createPostPayload) => {    
+export const CreatePost = async (postData: createPostPayload) => {
     const { data, status, statusText, error } = await supabase
         .from('Post')
         .insert({
@@ -93,7 +93,7 @@ export const DeletePost = async (id: number) => {
     return { data, status, statusText };
 }
 
-export const CreateMedia_Image = async (file: ArrayBuffer, name: string, fileType: string) => {
+export const CreateMedia_Image = async (file: ArrayBuffer, name: string, fileType: string): Promise<mediaResult | App_Error> => {
     const { data, error } = await supabase
         .storage
         .from('Post')
@@ -114,7 +114,7 @@ export const CreateMedia_Image = async (file: ArrayBuffer, name: string, fileTyp
     return { message: "uploaded succesfuly", data }
 }
 
-export const CreateMedia_Video = async (file: ArrayBuffer, name: string, fileType: string) => {
+export const CreateMedia_Video = async (file: ArrayBuffer, name: string, fileType: string): Promise<mediaResult | App_Error> => {
     const { data, error } = await supabase
         .storage
         .from('Post')
@@ -155,4 +155,14 @@ export const DeleteAccount = async (id: number) => {
 
 
     return { data, status, statusText };
+}
+
+export const GetMediaLink = async (path: string): Promise<string> => {
+
+    const { data } = supabase
+        .storage
+        .from('Post')
+        .getPublicUrl(path)
+
+    return data.publicUrl
 }

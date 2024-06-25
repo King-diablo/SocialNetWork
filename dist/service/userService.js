@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DeleteAccount = exports.CreateMedia_Video = exports.CreateMedia_Image = exports.DeletePost = exports.GetPostById = exports.GetAllPost = exports.CreatePost = void 0;
+exports.GetMediaLink = exports.DeleteAccount = exports.CreateMedia_Video = exports.CreateMedia_Image = exports.DeletePost = exports.GetPostById = exports.GetAllPost = exports.CreatePost = void 0;
 const database_1 = require("../config/database");
 const errorHelper_1 = require("../util/errorHelper");
 const CreatePost = (postData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -137,3 +137,11 @@ const DeleteAccount = (id) => __awaiter(void 0, void 0, void 0, function* () {
     return { data, status, statusText };
 });
 exports.DeleteAccount = DeleteAccount;
+const GetMediaLink = (path) => __awaiter(void 0, void 0, void 0, function* () {
+    const { data } = database_1.supabase
+        .storage
+        .from('Post')
+        .getPublicUrl(path);
+    return data.publicUrl;
+});
+exports.GetMediaLink = GetMediaLink;

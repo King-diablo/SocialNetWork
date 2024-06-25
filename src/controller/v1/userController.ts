@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CreateMedia_Image, CreateMedia_Video, CreatePost, DeletePost, GetAllPost, GetPostById } from "../../service/userService";
+import { CreateMedia_Image, CreateMedia_Video, CreatePost, DeletePost, GetAllPost, GetMediaLink, GetPostById } from "../../service/userService";
 import { getErrorMessage } from "../../util/errorHelper";
 import fs from "fs/promises";
 
@@ -39,22 +39,43 @@ export const updateProfile = (req: Request, res: Response) => {
 }
 
 export const createPost = async (req: Request | customRequest, res: Response) => {
-    console.log(req.body);
-
-    const { content, isMedia } = req.body;
+    const { content } = req.body;    
 
     if ("user" in req) {
         const user = req.user;
+        const userId = user.id;
+        const userName = user.userName;
 
-        let response = null;
-        if (isMedia) {
-            if (!content) return res.status(404).json({ status: "error", messgae: "content is required" });
+        try {
+            let response = null;
+            let isMedia = Boolean(req.file);
+            
+            console.log(isMedia);
+            
+            
+            if (isMedia) {
+                const medaiContent = await doMediaUpload(req.file!, user);
+                const link = medaiContent.mediaLink!;
 
-            response = await CreatePost({ content, userId: user.id, isMedia, userName: user.userName });
-            res.status(201).json(response);
+                if (typeof (link) === "string") {
+                    console.log("hasMedia",content, userId, isMedia, userName, link);
+                    response = await CreatePost({ content, userId, isMedia, userName, mediaPath: link });
+                    res.status(201).json(response);
+                }
+            }
+            else {
+                if (!content) return res.status(404).json({ status: "error", messgae: "content is required" });
+                console.log("noMedia", content, userId, isMedia, userName);
+                response = await CreatePost({ content, userId, isMedia, userName });
+                
+                res.status(201).json(response);
+            }
+        } catch (err) {
+            const error = getErrorMessage(err);
+            console.log(error);
+            res.status(500).json({message: error.message, reason: error.from});
         }
-        else { }
-        // create media post
+
     }
 }
 
@@ -76,10 +97,7 @@ export const deleteAccount = (req: Request, res: Response) => {
 
 }
 
-export const uploadMedia = async (req: Request, res: Response) => {
-
-    const user = (req as customRequest).user;
-
+const doMediaUpload = async (file:Express.Multer.File, user: signedInUser) => {
     const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const videoMimeTypes = ['video/mp4', 'video/x-matroska', 'video/avi', 'video/webm'];
 
@@ -87,9 +105,9 @@ export const uploadMedia = async (req: Request, res: Response) => {
 
     const isVideo = (mimeType: string) => videoMimeTypes.includes(mimeType);
 
-    const mimeType = req.file?.mimetype;
-    
-    const path = req.file?.path!;
+    const mimeType = file?.mimetype;
+
+    const path = file?.path!;
 
     const data = await fs.readFile(path);
 
@@ -97,21 +115,29 @@ export const uploadMedia = async (req: Request, res: Response) => {
 
     const fileName = `${user?.userName}_${Date.now()}`
 
+    let mediaLink = null;
+
+
     if (mimeType) {
         if (isImage(mimeType)) {
-            console.log(`${req.file?.filename} is an image with MIME type: ${mimeType}`);
-           result =  await CreateMedia_Image(data.buffer, fileName, mimeType);
+            console.log(`${file?.filename} is an image with MIME type: ${mimeType}`);
+            result = await CreateMedia_Image(data.buffer, fileName, mimeType);
         } else if (isVideo(mimeType)) {
-            console.log(`${req.file?.filename} is a video with MIME type: ${mimeType}`);
+            console.log(`${file?.filename} is a video with MIME type: ${mimeType}`);
             result = await CreateMedia_Video(data.buffer, fileName, mimeType);
         } else {
-            console.log(`${req.file?.filename} is neither an image nor a video.`);
+            console.log(`${file?.filename} is neither an image nor a video.`);
             result = "Unable to post content"
         }
+    }    
+
+    if(result &&  typeof(result) !== "string" && "data" in result){        
+        mediaLink = await GetMediaLink(result.data.path);
     }
 
     // create a new data in Post database and add the mediaUrl to it
 
     fs.rm(path);
-    res.json({status: "success", result});
+
+    return {result, mediaLink}
 }
